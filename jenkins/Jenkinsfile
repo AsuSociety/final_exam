@@ -4,7 +4,8 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-jen')  
         DOCKER_REGISTRY = 'omerasus3' 
         REPO_NAME = 'mock-flask-app' 
-        IMAGE_TAG = "${env.BUILD_NUMBER}"  
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        APP_DIR = 'jenkins'  // Define the application directory
     }
     stages {
         stage('Clone Repository') {
@@ -47,7 +48,9 @@ pipeline {
                         stage('Lint Dockerfile (Hadolint)') {
                             steps {
                                 echo 'Running Hadolint using Docker...'
-                                sh 'docker run --rm -i hadolint/hadolint < Dockerfile || true'
+                                dir(env.APP_DIR) {
+                                    sh 'docker run --rm -i hadolint/hadolint < Dockerfile || true'
+                                }
                             }
                         }
                     }
@@ -63,7 +66,9 @@ pipeline {
                         stage('Build Temporary Image for Trivy') {
                             steps {
                                 echo 'Building temporary image for Trivy scan...'
-                                sh "docker build -t ${DOCKER_REGISTRY}/${REPO_NAME}:temp ."
+                                dir(env.APP_DIR) {
+                                    sh "docker build -t ${DOCKER_REGISTRY}/${REPO_NAME}:temp ."
+                                }
                             }
                         }
                         stage('Security Scan Docker Image (Trivy)') {
@@ -83,7 +88,9 @@ pipeline {
                 script {
                     def IMAGE_NAME = "${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG}"
                     echo "Building Docker image ${IMAGE_NAME}..."
-                    docker.build(IMAGE_NAME, ".")
+                    dir(env.APP_DIR) {
+                        docker.build(IMAGE_NAME, ".")
+                    }
                 }
             }
         }
@@ -100,7 +107,7 @@ pipeline {
 
     post {
         always {
-            sh 'docker logout'  // Ensure Docker Hub logout for security
+            sh 'docker logout || true'  // Ensure Docker Hub logout for security
         }
     }
 }
