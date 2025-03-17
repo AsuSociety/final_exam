@@ -32,11 +32,15 @@ It also has an Azure Pipeline that:
 ### Steps
 
 1. Clone this repo and go to the Azure branch:
+
    ```bash
    git clone https://github.com/AsuSociety/final_exam.git
    git checkout feature/azure
    cd azure/app
    ```
+
+   **if you dont want to run the app locally, skip this steps.**
+
 2. Build Docker image:
    ```bash
    docker build -t final-exam-azure .
