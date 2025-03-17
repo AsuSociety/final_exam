@@ -1,0 +1,33 @@
+# prettier-ignore
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "final-exam-app.fullname" . }}
+  labels:
+    {{- include "final-exam-app.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "final-exam-app.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "final-exam-app.name" . }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 5001
+              name: http
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              value: {{ .Values.aws.accessKeyId | quote }}
+            - name: AWS_SECRET_ACCESS_KEY
+              value: {{ .Values.aws.secretAccessKey | quote }}
+            - name: AWS_REGION
+              value: {{ .Values.aws.region | quote }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
