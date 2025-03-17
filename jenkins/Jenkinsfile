@@ -1,0 +1,111 @@
+pipeline {
+    agent any
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-jen')  
+        DOCKER_REGISTRY = 'omerasus3' 
+        REPO_NAME = 'mock-flask-app' 
+        IMAGE_TAG = "${env.BUILD_NUMBER}"  
+    }
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git branch: 'feature/jenkins', url: 'https://github.com/AsuSociety/final_exam.git'
+            }
+        }
+
+        stage('Install Tools') {
+            steps {
+                // Install Python tools (Flake8, Bandit)
+                sh 'pip install --upgrade pip'
+                sh 'pip install flake8 bandit'
+
+                // Install ShellCheck for shell script linting
+                sh 'apt-get update && apt-get install -y shellcheck'
+
+                // Install Hadolint for Dockerfile linting
+                sh 'curl -L "https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-$(uname -s)-$(uname -m)" -o /usr/local/bin/hadolint'
+                sh 'chmod +x /usr/local/bin/hadolint'
+                sh 'hadolint --version'
+
+                // Install Trivy for Docker image security scanning
+                sh 'curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.47.0'
+                sh 'trivy --version'
+            }
+        }
+
+        stage('Linting and Security Scanning') {
+            parallel {
+                stage('Linting') {
+                    stages {
+                        stage('Lint Python Code (Flake8)') {
+                            steps {
+                                echo 'Running Flake8...'
+                                sh 'flake8 . || true'  
+                            }
+                        }
+                        stage('Lint Shell Scripts (ShellCheck)') {
+                            steps {
+                                echo 'Running ShellCheck...'
+                                sh 'find . -type f -name "*.sh" | xargs shellcheck || true'
+                            }
+                        }
+                        stage('Lint Dockerfile (Hadolint)') {
+                            steps {
+                                echo 'Running Hadolint...'
+                                sh 'hadolint Dockerfile || true'
+                            }
+                        }
+                    }
+                }
+                stage('Security Scanning') {
+                    stages {
+                        stage('Security Scan Python (Bandit)') {
+                            steps {
+                                echo 'Running Bandit...'
+                                sh 'bandit -r . || true'
+                            }
+                        }
+                        stage('Build Temporary Image for Trivy') {
+                            steps {
+                                echo 'Building temporary image for Trivy scan...'
+                                sh "docker build -t ${DOCKER_REGISTRY}/${REPO_NAME}:temp ."
+                            }
+                        }
+                        stage('Security Scan Docker Image (Trivy)') {
+                            steps {
+                                echo 'Running Trivy...'
+                                sh "trivy image --severity HIGH,CRITICAL ${DOCKER_REGISTRY}/${REPO_NAME}:temp || true"
+                                sh "docker rmi ${DOCKER_REGISTRY}/${REPO_NAME}:temp"  // Clean up
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    def IMAGE_NAME = "${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG}"
+                    echo "Building Docker image ${IMAGE_NAME}..."
+                    docker.build(IMAGE_NAME, ".")
+                }
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                sh "echo \$DOCKERHUB_CREDENTIALS_PSW | docker login -u \$DOCKERHUB_CREDENTIALS_USR --password-stdin"
+                sh "docker push ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG}"
+                sh "docker tag ${DOCKER_REGISTRY}/${REPO_NAME}:${IMAGE_TAG} ${DOCKER_REGISTRY}/${REPO_NAME}:latest"
+                sh "docker push ${DOCKER_REGISTRY}/${REPO_NAME}:latest"
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker logout'  // Ensure Docker Hub logout for security
+        }
+    }
+}
