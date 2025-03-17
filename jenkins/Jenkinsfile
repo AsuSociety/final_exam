@@ -3,7 +3,7 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-jen')  
         DOCKER_REGISTRY = 'omerasus3' 
-        REPO_NAME = 'mock-flask-app' 
+        REPO_NAME = 'my-app-final-exam' 
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         APP_DIR = 'jenkins'  // Define the application directory
     }
