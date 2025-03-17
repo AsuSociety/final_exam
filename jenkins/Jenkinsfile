@@ -3,9 +3,9 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-jen')  
         DOCKER_REGISTRY = 'omerasus3' 
-        REPO_NAME = 'mock-flask-app' 
+        REPO_NAME = 'final-exam-app' 
         IMAGE_TAG = "${env.BUILD_NUMBER}"
-        APP_DIR = 'jenkins'  // Define the application directory
+        APP_DIR = 'jenkins' 
     }
     stages {
         stage('Clone Repository') {
