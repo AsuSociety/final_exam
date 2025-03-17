@@ -1,0 +1,99 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+  branches:
+    include:
+      - feature/azure
+
+variables:
+  DOCKER_REGISTRY: "omerasus3"
+  REPO_NAME: "final-exam-app"
+  IMAGE_TAG: "$(Build.BuildId)"
+  APP_DIR: "azure/app"
+
+stages:
+  - stage: Setup
+    jobs:
+      - job: SetupEnvironment
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: "3.x"
+              addToPath: true
+
+          - script: |
+              python --version
+              pip --version
+              pip install --upgrade pip
+              pip install flake8 bandit
+            displayName: "Install Python Tools"
+
+          - script: |
+              curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.47.0
+              trivy --version
+            displayName: "Install Trivy"
+
+  - stage: QualityAndSecurity
+    jobs:
+      - job: Linting
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: "3.x"
+
+          - script: |
+              pip install flake8
+              flake8 . || true
+            displayName: "Python Linting"
+
+          - script: |
+              sudo apt-get install -y shellcheck
+              find . -type f -name "*.sh" | xargs shellcheck || true
+            displayName: "Shell Script Linting"
+
+          - script: |
+              docker run --rm -i hadolint/hadolint < $(APP_DIR)/Dockerfile || true
+            displayName: "Dockerfile Linting"
+
+      - job: SecurityScanning
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: "3.x"
+
+          - script: |
+              pip install bandit
+              bandit -r . || true
+            displayName: "Python Security Scan"
+
+          - script: |
+              docker build -t $(DOCKER_REGISTRY)/$(REPO_NAME):temp $(APP_DIR)
+              curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.47.0
+              trivy image --severity HIGH,CRITICAL $(DOCKER_REGISTRY)/$(REPO_NAME):temp || true
+              docker rmi $(DOCKER_REGISTRY)/$(REPO_NAME):temp
+            displayName: "Docker Image Security Scan"
+
+  - stage: Build
+    jobs:
+      - job: BuildAndPush
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - task: Docker@2
+            inputs:
+              containerRegistry: "dockerhub"
+              repository: "$(DOCKER_REGISTRY)/$(REPO_NAME)"
+              command: "buildAndPush"
+              Dockerfile: "$(APP_DIR)/Dockerfile"
+              tags: |
+                $(IMAGE_TAG)
+                latest
