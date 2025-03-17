@@ -67,7 +67,9 @@ It also has an Azure Pipeline that:
 ## SCREENSHOT'S
 
 1. Here you can see that the pipeline is running and the image is being pushed to the docker hub.
+   ![Alt text](https://github.com/AsuSociety/final_exam/blob/feature/azure/azure/screenshots/azure-pipe-sucsses.png)
 
 2. Here you can see that the image has been pushed to the docker hub.
+   ![Alt text](https://github.com/AsuSociety/final_exam/blob/feature/azure/azure/screenshots/dockerhub-after-azure.png)
 
 ---
