@@ -15,7 +15,7 @@ WORKDIR /app
 
 COPY --from=builder /root/.local /root/.local
 
-COPY app.py .
+COPY src/app.py .
 
 ENV PATH=/root/.local/bin:$PATH
 
