@@ -3,7 +3,7 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-jen')  
         DOCKER_REGISTRY = 'omerasus3' 
-        REPO_NAME = 'my-app-final-exam' 
+        REPO_NAME = 'mock-flask-app' 
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         APP_DIR = 'jenkins'  // Define the application directory
     }
@@ -14,18 +14,45 @@ pipeline {
             }
         }
 
+        // For the EC2 instance
+        stage('Setup Environment') {
+            steps {
+                sh '''
+                    # Install Python and pip
+                    apt-get update
+                    apt-get install -y python3 python3-pip shellcheck
+                    
+                    # Create symlinks if needed
+                    if ! command -v python &> /dev/null; then
+                        ln -sf /usr/bin/python3 /usr/bin/python
+                    fi
+                    
+                    if ! command -v pip &> /dev/null; then
+                        ln -sf /usr/bin/pip3 /usr/bin/pip
+                    fi
+                    
+                    # Verify installations
+                    python --version
+                    pip --version
+                '''
+            }
+        }
+
         stage('Install Tools') {
             steps {
                 // Install Python tools (Flake8, Bandit)
                 sh 'pip install --upgrade pip'
                 sh 'pip install flake8 bandit'
 
-                // Install ShellCheck for shell script linting
-                sh 'apt-get update && apt-get install -y shellcheck'
-
                 // Install Trivy for Docker image security scanning
-                sh 'curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.47.0'
-                sh 'trivy --version'
+                sh '''
+                    # Install curl if not already installed
+                    apt-get install -y curl
+                    
+                    # Install Trivy
+                    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.47.0
+                    trivy --version
+                '''
             }
         }
 
