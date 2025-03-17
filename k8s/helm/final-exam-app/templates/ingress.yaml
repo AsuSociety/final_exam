@@ -1,0 +1,19 @@
+# prettier-ignore
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "final-exam-app.fullname" . }}
+  labels:
+    {{- include "final-exam-app.labels" . | nindent 4 }}
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ include "final-exam-app.fullname" . }}
+            port:
+              number: 80

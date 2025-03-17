@@ -1,0 +1,35 @@
+replicaCount: 3
+
+image:
+  repository: omerasus3/final-exam-app
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  enabled: true
+  name: test-app-service
+  type: LoadBalancer
+  port: 80
+  targetPort: 5001
+
+resources: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+ingress:
+  enabled: false
+  name: ""
+  path: /
+  hosts:
+    - host: chart-example.local
+      paths: []
+  tls: []
+
+aws:
+  accessKeyId: ""
+  secretAccessKey: ""
+  region: ""
