@@ -1,7 +1,7 @@
 data "aws_vpc" "existing" {
   id = "vpc-044604d0bfb707142"
 }
-
+# USE DEFAULT SUBNET FROM YANIV VPC
 # resource "aws_subnet" "public" {
 #   vpc_id                  = data.aws_vpc.existing.id
 #   cidr_block              = var.subnet_cidr

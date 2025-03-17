@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 data "aws_subnet" "existing_public" {
-  id = "subnet-09acf0c86ccc923bd" # Use the subnet ID from your output
+  id = "subnet-09acf0c86ccc923bd"
 }
 
 resource "aws_instance" "builder" {

@@ -13,6 +13,7 @@ variable "vpc_cidr" {
   default     = "10.0.0.0/16"
 }
 
+# USE DEFAULT SUBNET CIDR FROM YANIV VPC
 # variable "subnet_cidr" {
 #   description = "CIDR block for subnet"
 #   default     = "172.31.96.0/20"
