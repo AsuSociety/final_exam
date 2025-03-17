@@ -22,11 +22,6 @@ pipeline {
                 // Install ShellCheck for shell script linting
                 sh 'apt-get update && apt-get install -y shellcheck'
 
-                // Install Hadolint for Dockerfile linting
-                sh 'curl -L "https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-$(uname -s)-$(uname -m)" -o /usr/local/bin/hadolint'
-                sh 'chmod +x /usr/local/bin/hadolint'
-                sh 'hadolint --version'
-
                 // Install Trivy for Docker image security scanning
                 sh 'curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.47.0'
                 sh 'trivy --version'
@@ -51,8 +46,8 @@ pipeline {
                         }
                         stage('Lint Dockerfile (Hadolint)') {
                             steps {
-                                echo 'Running Hadolint...'
-                                sh 'hadolint Dockerfile || true'
+                                echo 'Running Hadolint using Docker...'
+                                sh 'docker run --rm -i hadolint/hadolint < Dockerfile || true'
                             }
                         }
                     }
