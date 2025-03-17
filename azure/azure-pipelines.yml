@@ -12,7 +12,7 @@ variables:
   DOCKER_REGISTRY: "omerasus3"
   REPO_NAME: "final-exam-app"
   IMAGE_TAG: "$(Build.BuildId)"
-  APP_DIR: "app"
+  APP_DIR: "azure/app"
 
 stages:
   - stage: Setup
@@ -90,7 +90,7 @@ stages:
         steps:
           - task: Docker@2
             inputs:
-              containerRegistry: "dockerhub" # This needs to be configured in Azure DevOps
+              containerRegistry: "dockerhub"
               repository: "$(DOCKER_REGISTRY)/$(REPO_NAME)"
               command: "buildAndPush"
               Dockerfile: "$(APP_DIR)/Dockerfile"
